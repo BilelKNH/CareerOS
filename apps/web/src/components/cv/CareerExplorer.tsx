@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { endpoints, CareerMatch } from '@/lib/api-client';
+import { categoryColor } from '@/lib/colors';
 
 function scoreColor(s: number) {
   if (s >= 70) return 'bg-emerald-100 text-emerald-800';
@@ -83,6 +84,7 @@ export function CareerExplorer() {
                   >
                     <span className="flex items-center gap-2 text-sm font-medium">
                       <span className="text-muted">{open ? '▾' : '▸'}</span>
+                      <span className="h-2 w-2 rounded-full" style={{ background: categoryColor(sector) }} />
                       {sector}
                       <span className="text-xs font-normal text-muted">· {roles.length} métiers</span>
                     </span>

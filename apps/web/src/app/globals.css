@@ -25,6 +25,14 @@
   --accent-tint: 231 229 254; /* light: accent-200 */
   --accent-strong: 93 82 148; /* accent-700 */
 
+  /* Semantic status colours (light) */
+  --ok: 15 110 86;
+  --ok-tint: 225 245 238;
+  --warn: 133 79 11;
+  --warn-tint: 250 238 218;
+  --bad: 163 45 45;
+  --bad-tint: 252 235 235;
+
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
   color-scheme: light;
 }
@@ -42,6 +50,14 @@
 
   --accent-tint: 66 58 106; /* accent-800 #423a6a */
   --accent-strong: 210 206 253; /* accent-300 #d2cefd (text on dark tint) */
+
+  /* Semantic status colours (dark) */
+  --ok: 93 202 165;
+  --ok-tint: 12 58 47;
+  --warn: 239 159 39;
+  --warn-tint: 66 45 12;
+  --bad: 240 138 138;
+  --bad-tint: 74 30 30;
 
   --shadow-card: 0 0 0 1px #3f424d, 0 6px 18px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
@@ -151,6 +167,39 @@
     @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs;
     background: color-mix(in srgb, rgb(var(--fg)) 8%, transparent);
     color: rgb(var(--muted));
+  }
+  .tag-outline {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs;
+    border: 1px solid rgb(var(--brand));
+    color: rgb(var(--brand));
+  }
+
+  /* Semantic status pills (score / statut). */
+  .tag-ok {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium;
+    background: rgb(var(--ok-tint));
+    color: rgb(var(--ok));
+  }
+  .tag-warn {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium;
+    background: rgb(var(--warn-tint));
+    color: rgb(var(--warn));
+  }
+  .tag-bad {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium;
+    background: rgb(var(--bad-tint));
+    color: rgb(var(--bad));
+  }
+  .text-ok { color: rgb(var(--ok)); }
+  .text-warn { color: rgb(var(--warn)); }
+  .text-bad { color: rgb(var(--bad)); }
+
+  /* Accent glow — a soft blurple bloom for agent / key cards. */
+  .glow-accent {
+    box-shadow:
+      var(--shadow-card),
+      0 0 0 1px color-mix(in srgb, rgb(var(--brand)) 30%, transparent),
+      0 8px 40px color-mix(in srgb, rgb(var(--brand)) 18%, transparent);
   }
 
   /* Agent badge — every AI-found/generated piece of data carries this. */

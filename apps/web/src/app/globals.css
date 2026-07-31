@@ -1,0 +1,188 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Nocturne design system — tokens mapped onto the app's theme
+   variables. Dark = Nocturne as designed; light = a derived,
+   softer variant so the existing theme toggle keeps working.
+   Values are space-separated RGB for Tailwind's rgb(var()/alpha).
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Light (derived from Nocturne ramps) */
+  --bg: 245 246 251;
+  --surface: 255 255 255;
+  --border: 224 227 240;
+  --fg: 35 37 50;
+  --muted: 117 121 140;
+  --brand: 121 108 191; /* accent-600 for contrast on light */
+  --brand-fg: 231 229 254; /* accent-200 tint */
+  --panel: 238 240 248;
+
+  /* Nocturne accent ramp (theme-flipping steps used by components) */
+  --accent-tint: 231 229 254; /* light: accent-200 */
+  --accent-strong: 93 82 148; /* accent-700 */
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+.dark {
+  /* Nocturne — as designed */
+  --bg: 22 24 38; /* #161826 */
+  --surface: 35 37 50; /* #232532 */
+  --border: 63 66 77; /* neutral-800 #3f424d */
+  --fg: 233 233 237; /* #e9e9ed */
+  --muted: 147 151 171; /* neutral-500 #9397ab */
+  --brand: 145 132 217; /* accent #9184d9 */
+  --brand-fg: 43 39 65; /* accent-900 #2b2741 */
+  --panel: 41 43 49; /* neutral-900 #292b31 */
+
+  --accent-tint: 66 58 106; /* accent-800 #423a6a */
+  --accent-strong: 210 206 253; /* accent-300 #d2cefd (text on dark tint) */
+
+  --shadow-card: 0 0 0 1px #3f424d, 0 6px 18px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--border));
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  /* Nocturne focus ring — never the browser default. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, rgb(var(--brand)) 30%, transparent);
+  }
+}
+
+/* Smooth color fade only during an explicit theme switch (no hover lag). */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    fill 0.3s ease !important;
+}
+
+@layer components {
+  /* Surface-filled card with a hairline + ambient elevation. */
+  .card {
+    @apply rounded-lg bg-surface;
+    box-shadow: var(--shadow-card);
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground
+           placeholder:text-muted outline-none transition;
+    caret-color: rgb(var(--brand));
+  }
+  .input:hover {
+    border-color: color-mix(in srgb, rgb(var(--fg)) 40%, transparent);
+  }
+  .input:focus-visible {
+    border-color: rgb(var(--brand));
+    outline: none;
+  }
+
+  /* Buttons — Nocturne: outlined, never a flat fill. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent
+           bg-transparent px-4 py-2 text-sm font-medium text-foreground transition;
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-45;
+  }
+  .btn-primary {
+    @apply btn;
+    color: rgb(var(--brand));
+    border-color: rgb(var(--brand));
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, rgb(var(--brand)) 12%, transparent);
+  }
+  .btn-primary:active {
+    background: color-mix(in srgb, rgb(var(--brand)) 22%, transparent);
+  }
+  .btn-secondary {
+    @apply btn border-border;
+  }
+  .btn-secondary:hover {
+    background: color-mix(in srgb, rgb(var(--fg)) 7%, transparent);
+  }
+  .btn-ghost {
+    @apply btn;
+    color: rgb(var(--brand));
+  }
+  .btn-ghost:hover {
+    background: color-mix(in srgb, rgb(var(--brand)) 10%, transparent);
+  }
+  .btn-icon {
+    @apply btn h-9 w-9 border-border p-0;
+  }
+  .btn-icon:hover {
+    background: color-mix(in srgb, rgb(var(--fg)) 7%, transparent);
+  }
+
+  /* Chips / tags — tinted from the accent ramp. */
+  .chip {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs;
+    background: rgb(var(--accent-tint));
+    color: rgb(var(--accent-strong));
+  }
+  .tag-neutral {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs;
+    background: color-mix(in srgb, rgb(var(--fg)) 8%, transparent);
+    color: rgb(var(--muted));
+  }
+
+  /* Agent badge — every AI-found/generated piece of data carries this. */
+  .agent-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium;
+    background: rgb(var(--accent-tint));
+    color: rgb(var(--accent-strong));
+  }
+  .agent-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgb(var(--brand));
+  }
+
+  /* Uppercase micro-label. */
+  .kicker {
+    @apply text-[10px] font-medium uppercase tracking-[0.1em];
+    color: rgb(var(--brand));
+  }
+
+  /* Freestanding rule that fades at both ends — a Nocturne signature. */
+  .hr {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--border)) 48px,
+      rgb(var(--border)) calc(100% - 48px),
+      transparent
+    );
+  }
+}

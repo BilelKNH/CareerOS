@@ -1,0 +1,442 @@
+// CareerOS — Prisma schema
+// pgvector enabled via the `vector` extension (see migrations + init.sql).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "driverAdapters"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ---------- Enums ----------
+
+enum DataSource {
+  user
+  ai_inferred
+  scraped
+}
+
+enum SkillCategory {
+  language
+  framework
+  tool
+  cloud
+  soft
+  methodology
+}
+
+enum SkillLevel {
+  notion
+  junior
+  confirme
+  senior
+  expert
+}
+
+enum RemotePolicy {
+  onsite
+  hybrid
+  remote
+}
+
+enum CertStatus {
+  obtenue
+  en_cours
+  visee
+}
+
+enum OfferSource {
+  linkedin
+  indeed
+  wttj
+  freework
+  apec
+  hellowork
+  malt
+  chooseyourboss
+  francetravail
+  adzuna
+  sample
+}
+
+enum OfferStatus {
+  new
+  seen
+  applied
+  archived
+}
+
+enum InterviewProbability {
+  faible
+  moyenne
+  elevee
+}
+
+enum ReportType {
+  weekly
+  monthly
+}
+
+enum NotificationType {
+  high_match
+  skill_trend
+  market_shift
+  certification
+  report_ready
+  application_ready
+  application_submitted
+}
+
+enum ApplicationStatus {
+  draft
+  pending_review
+  approved
+  submitted
+  rejected
+  skipped
+  failed
+}
+
+enum ApplicationChannel {
+  manual
+  email
+  external_url
+}
+
+enum MemoryKind {
+  experience
+  achievement
+  skill
+  interview_feedback
+  career_goal
+  preference
+  analysis
+  research
+}
+
+enum SnapshotTrigger {
+  journal
+  experience
+  manual
+}
+
+enum AgentTrigger {
+  manual
+  scheduled
+}
+
+enum AgentStatus {
+  running
+  completed
+  failed
+}
+
+// ---------- Core ----------
+
+model User {
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  fullName           String?
+  headline           String?
+  location           String?
+  yearsExperience    Decimal  @default(0) @db.Decimal(4, 1)
+  targetRoles        String[] @default([])
+  employabilityScore Int      @default(0)
+  cvScore            Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  experiences     Experience[]
+  skills          Skill[]
+  projects        Project[]
+  certifications  Certification[]
+  preferences     JobPreference?
+  matches         JobMatch[]
+  journalEntries  CareerJournal[]
+  reports         Report[]
+  notifications   Notification[]
+  snapshots       MemorySnapshot[]
+  memories        CareerMemory[]
+  agentRuns       AgentRun[]
+  applications    Application[]
+
+  autonomousAgentEnabled Boolean @default(true)
+
+  // Auto-apply — OFF by default; explicit opt-in required.
+  autoApplyEnabled    Boolean            @default(false)
+  autoApplyThreshold  Int                @default(92)
+  autoApplyDailyLimit Int                @default(3)
+  autoApplyChannel    ApplicationChannel @default(manual)
+}
+
+model Experience {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  company      String
+  location     String?
+  contractType String?
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean    @default(false)
+  description  String?
+  achievements String[]   @default([])
+  technologies String[]   @default([])
+  source       DataSource @default(user)
+  confidence   Float      @default(1)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  journalLinks CareerJournal[]
+
+  @@index([userId])
+}
+
+model Skill {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  normalizedName String
+  category       SkillCategory @default(tool)
+  level          SkillLevel    @default(junior)
+  years          Decimal       @default(0) @db.Decimal(4, 1)
+  lastUsedAt     DateTime?
+  source         DataSource    @default(user)
+  confidence     Float         @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
+}
+
+model Project {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  repoUrl      String?
+  url          String?
+  technologies String[]  @default([])
+  role         String?
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Certification {
+  id            String     @id @default(uuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  issuer        String?
+  issuedAt      DateTime?
+  expiresAt     DateTime?
+  credentialUrl String?
+  status        CertStatus @default(obtenue)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model JobPreference {
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  desiredRoles      String[]     @default([])
+  locations         String[]     @default([])
+  remote            RemotePolicy @default(hybrid)
+  searchRadiusKm    Int          @default(30)
+  contractTypes     String[]     @default([])
+  salaryMin         Int?
+  salaryMax         Int?
+  tjmMin            Int?
+  tjmMax            Int?
+  keywords          String[]     @default([])
+  excludedCompanies String[]     @default([])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model JobOffer {
+  id             String      @id @default(uuid())
+  source         OfferSource
+  externalId     String?
+  url            String
+  contentHash    String      @unique
+  title          String
+  company        String?
+  location       String?
+  salary         String?
+  tjm            String?
+  contractType   String?
+  description    String?
+  technologies   String[]    @default([])
+  requiredSkills String[]    @default([])
+  contactEmail   String?
+  publishedAt    DateTime?
+  scrapedAt      DateTime    @default(now())
+  status         OfferStatus @default(new)
+
+  matches      JobMatch[]
+  applications Application[]
+
+  @@index([source])
+  @@index([status])
+}
+
+model JobMatch {
+  id                   String               @id @default(uuid())
+  userId               String
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobOfferId           String
+  jobOffer             JobOffer             @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  globalScore          Int
+  techScore            Int
+  experienceScore      Int
+  locationScore        Int
+  salaryScore          Int
+  seniorityScore       Int
+  contractScore        Int
+  strengths            String[]             @default([])
+  weaknesses           String[]             @default([])
+  missingSkills        String[]             @default([])
+  missingTechnologies  String[]             @default([])
+  interviewProbability InterviewProbability @default(moyenne)
+  salaryEstimate       String?
+  readinessDays        Int?
+  recommendations      String?
+  createdAt            DateTime             @default(now())
+
+  @@unique([userId, jobOfferId])
+  @@index([userId])
+  @@index([globalScore])
+}
+
+model CareerJournal {
+  id                       String      @id @default(uuid())
+  userId                   String
+  user                     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawText                  String
+  extractedSkills          String[]    @default([])
+  extractedTechnologies    String[]    @default([])
+  extractedResponsibilities String[]   @default([])
+  extractedResults         String[]    @default([])
+  applied                  Boolean     @default(false)
+  linkedExperienceId       String?
+  linkedExperience         Experience? @relation(fields: [linkedExperienceId], references: [id])
+  createdAt                DateTime    @default(now())
+
+  @@index([userId])
+}
+
+model Report {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        ReportType
+  periodStart DateTime
+  periodEnd   DateTime
+  payload     Json
+  generatedAt DateTime   @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String?
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+}
+
+model MemorySnapshot {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version     Int
+  profile     Json
+  reason      String?
+  triggeredBy SnapshotTrigger @default(manual)
+  createdAt   DateTime        @default(now())
+
+  @@unique([userId, version])
+  @@index([userId])
+}
+
+model CareerMemory {
+  id        String                       @id @default(uuid())
+  userId    String
+  user      User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      MemoryKind
+  content   String
+  embedding Unsupported("vector(384)")?
+  metadata  Json?
+  createdAt DateTime                     @default(now())
+
+  @@index([userId])
+}
+
+// A job application, with a review lifecycle. Auto-submission only happens when
+// the user has explicitly opted in AND the match clears their threshold.
+model Application {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobOfferId   String
+  jobOffer     JobOffer           @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  jobMatchId   String?
+  status       ApplicationStatus  @default(pending_review)
+  channel      ApplicationChannel @default(manual)
+  matchScore   Int?
+  cvSummary    String?
+  coverLetter  String?
+  atsKeywords  String[]           @default([])
+  autoSubmitted Boolean           @default(false)
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  followedUpAt DateTime?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([userId, jobOfferId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Audit trail of every autonomous Career Agent cycle — full transparency on
+// what the agent did on its own, and what it recommends the user do.
+model AgentRun {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trigger     AgentTrigger @default(scheduled)
+  status      AgentStatus  @default(running)
+  startedAt   DateTime     @default(now())
+  finishedAt  DateTime?
+  metrics     Json?
+  digest      Json?
+  error       String?
+
+  @@index([userId])
+}

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  DATABASE_URL: postgresql://careeros:careeros@localhost:5432/careeros?schema=public
+  JWT_SECRET: ci-test-secret-please-change-1234
+  JWT_REFRESH_SECRET: ci-test-refresh-secret-change-1234
+  NEXT_PUBLIC_API_URL: http://localhost:3001
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm --filter @careeros/database exec prisma generate
+      - run: pnpm --filter @careeros/api test
+      - run: pnpm --filter @careeros/api build
+      - run: pnpm --filter @careeros/web build
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: careeros
+          POSTGRES_PASSWORD: careeros
+          POSTGRES_DB: careeros
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U careeros"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm --filter @careeros/database exec prisma generate
+      - name: Sync schema + seed
+        run: |
+          pnpm --filter @careeros/database exec prisma db push --accept-data-loss
+          pnpm --filter @careeros/database exec tsx prisma/seed.ts
+      - name: Install Playwright browsers
+        run: pnpm --filter @careeros/e2e exec playwright install --with-deps chromium
+      - name: Run e2e (Playwright manages the servers)
+        env:
+          E2E_MANAGE_SERVERS: '1'
+        run: pnpm --filter @careeros/e2e test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7

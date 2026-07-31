@@ -1,0 +1,19 @@
+{
+  "name": "careeros-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lanceur CareerOS compilable en .exe",
+  "bin": "launch.js",
+  "scripts": {
+    "start": "node launch.js",
+    "build:exe": "pkg . --targets node18-win-x64 --output ../CareerOS.exe"
+  },
+  "pkg": {
+    "assets": [],
+    "targets": ["node18-win-x64"],
+    "outputPath": ".."
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^5.16.1"
+  }
+}

@@ -16,6 +16,10 @@ function statusTag(s: Application['status']): { label: string; cls: string } {
       return { label: 'à valider', cls: 'tag-ok' };
     case 'submitted':
       return { label: 'envoyée', cls: 'tag-neutral' };
+    case 'interview':
+      return { label: 'entretien', cls: 'tag-ok' };
+    case 'offer':
+      return { label: 'proposition 🎉', cls: 'tag-ok' };
     case 'rejected':
       return { label: 'refusée', cls: 'tag-bad' };
     case 'failed':
@@ -46,13 +50,19 @@ function AppCard({ app }: { app: Application }) {
     qc.invalidateQueries({ queryKey: ['applications'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
+  const [iDate, setIDate] = useState('');
   const approve = useMutation({ mutationFn: () => endpoints.approveApplication(app.id), onSuccess: invalidate });
   const skip = useMutation({ mutationFn: () => endpoints.skipApplication(app.id), onSuccess: invalidate });
+  const reject = useMutation({ mutationFn: () => endpoints.rejectApplication(app.id), onSuccess: invalidate });
   const followUp = useMutation({ mutationFn: () => endpoints.followUpApplication(app.id), onSuccess: invalidate });
+  const interview = useMutation({ mutationFn: () => endpoints.interviewApplication(app.id, iDate || undefined), onSuccess: invalidate });
+  const offer = useMutation({ mutationFn: () => endpoints.offerApplication(app.id), onSuccess: invalidate });
 
   const st = statusTag(app.status);
   const toReview = app.status === 'pending_review' || app.status === 'approved';
   const sent = app.status === 'submitted';
+  const isInterview = app.status === 'interview';
+  const isOffer = app.status === 'offer';
   const rejected = app.status === 'rejected';
   const band = scoreBand(app.matchScore);
   const matchCls = band.tag === 'tag-ok' ? 'text-ok' : band.tag === 'tag-warn' ? 'text-warn' : band.tag === 'tag-bad' ? 'text-bad' : '';
@@ -103,14 +113,38 @@ function AppCard({ app }: { app: Application }) {
         )}
         {sent && (
           <>
+            <input
+              type="datetime-local"
+              value={iDate}
+              onChange={(e) => setIDate(e.target.value)}
+              className="input h-8 w-auto text-[13px]"
+              title="Date de l’entretien (optionnel)"
+            />
+            <button onClick={() => interview.mutate()} disabled={interview.isPending} className="btn-primary">
+              {interview.isPending ? '…' : 'Entretien obtenu'}
+            </button>
             <button onClick={() => followUp.mutate()} disabled={followUp.isPending} className="btn-secondary">
               {followUp.isPending ? '…' : 'Relancer'}
             </button>
-            {hasDocs && (
-              <button onClick={() => setOpen((o) => !o)} className="btn-ghost">{open ? 'Réduire' : 'Voir le dossier'}</button>
-            )}
-            {app.submittedAt && <span className="ml-auto text-[11px] text-muted">envoyée le {fdate(app.submittedAt)}</span>}
+            <button onClick={() => reject.mutate()} className="btn-ghost" style={{ color: 'rgb(var(--muted))' }}>Refus</button>
           </>
+        )}
+        {isInterview && (
+          <>
+            <button onClick={() => offer.mutate()} disabled={offer.isPending} className="btn-primary">
+              {offer.isPending ? '…' : 'Proposition reçue 🎉'}
+            </button>
+            <button onClick={() => reject.mutate()} className="btn-ghost" style={{ color: 'rgb(var(--muted))' }}>Pas retenu</button>
+            {app.interviewAt && (
+              <span className="ml-auto text-[11px] text-brand">
+                entretien le {new Date(app.interviewAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} à{' '}
+                {new Date(app.interviewAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </>
+        )}
+        {isOffer && (
+          <span className="text-sm text-ok">🎉 Proposition d’embauche reçue — bravo !</span>
         )}
         {rejected && (
           <>
@@ -141,17 +175,19 @@ export default function ApplicationsPage() {
 
   const counts = useMemo(() => {
     const c = { all: apps.length, review: 0, sent: 0, rejected: 0, byEmail: 0 };
+    const sentLike = (s: string) => s === 'submitted' || s === 'interview' || s === 'offer';
     for (const a of apps) {
       if (a.status === 'pending_review' || a.status === 'approved') c.review += 1;
-      if (a.status === 'submitted') { c.sent += 1; if (a.channel === 'email') c.byEmail += 1; }
+      if (sentLike(a.status)) { c.sent += 1; if (a.status === 'submitted' && a.channel === 'email') c.byEmail += 1; }
       if (a.status === 'rejected') c.rejected += 1;
     }
     return c;
   }, [apps]);
 
   const list = useMemo(() => {
+    const sentLike = (s: string) => s === 'submitted' || s === 'interview' || s === 'offer';
     if (filter === 'review') return apps.filter((a) => a.status === 'pending_review' || a.status === 'approved');
-    if (filter === 'sent') return apps.filter((a) => a.status === 'submitted');
+    if (filter === 'sent') return apps.filter((a) => sentLike(a.status));
     if (filter === 'rejected') return apps.filter((a) => a.status === 'rejected');
     return apps;
   }, [apps, filter]);

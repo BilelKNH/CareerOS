@@ -23,6 +23,6 @@ async function bootstrap() {
   const port = config.get<number>('API_PORT', 3001);
   await app.listen(port);
   // eslint-disable-next-line no-console
-  console.log(`CareerOS API running on http://localhost:${port}/api`);
+  console.log(`Reas API running on http://localhost:${port}/api`);
 }
 bootstrap();

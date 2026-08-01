@@ -3,8 +3,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'CareerOS',
-  description: 'Ton copilote de carrière à mémoire persistante',
+  title: 'Reas — Recherche d’Emplois Autonome Simplifiée',
+  description: 'Reas — ta recherche d’emploi, autonome et simplifiée, avec un agent à mémoire persistante.',
 };
 
 // Applied before paint to avoid a flash of the wrong theme.

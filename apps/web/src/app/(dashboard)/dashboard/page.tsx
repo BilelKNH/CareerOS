@@ -42,6 +42,8 @@ export default function DashboardPage() {
   const { data: jobs = [] } = useQuery({ queryKey: ['jobs'], queryFn: endpoints.jobs });
   const { data: careers = [] } = useQuery({ queryKey: ['careers'], queryFn: endpoints.careers });
   const { data: runs = [] } = useQuery({ queryKey: ['agentRuns'], queryFn: endpoints.agentRuns });
+  const { data: applications = [] } = useQuery({ queryKey: ['applications'], queryFn: endpoints.applications });
+  const { data: journalEntries = [] } = useQuery({ queryKey: ['journal'], queryFn: endpoints.journal });
 
   const firstName = (profile?.fullName || '').split(' ')[0] || 'à toi';
   const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -109,6 +111,52 @@ export default function DashboardPage() {
     return items;
   }, [runs]);
 
+  // Gamification — streak of active days (journal + candidatures) and weekly goal.
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+  const streak = useMemo(() => {
+    const days = new Set<string>();
+    const add = (iso?: string | null) => { if (iso) days.add(dayKey(new Date(iso))); };
+    applications.forEach((a) => { add(a.createdAt); add(a.submittedAt); });
+    journalEntries.forEach((j) => add(j.createdAt));
+    let n = 0;
+    const d = new Date();
+    if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1); // grace: today optional
+    while (days.has(dayKey(d))) { n += 1; d.setDate(d.getDate() - 1); }
+    return n;
+  }, [applications, journalEntries]);
+
+  const WEEK_GOAL = 5;
+  const weeklyDone = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    return applications.filter((a) => a.status === 'submitted' && a.submittedAt && new Date(a.submittedAt) >= monday).length;
+  }, [applications]);
+
+  const kanban = useMemo(() => {
+    const appsList = overview?.applications ?? [];
+    type A = (typeof appsList)[number];
+    const cols: { save: A[]; applied: A[]; interview: A[]; offer: A[]; rejected: A[] } = {
+      save: [], applied: [], interview: [], offer: [], rejected: [],
+    };
+    for (const a of appsList) {
+      if (a.status === 'pending_review' || a.status === 'approved') cols.save.push(a);
+      else if (a.status === 'submitted') cols.applied.push(a);
+      else if (a.status === 'interview') cols.interview.push(a);
+      else if (a.status === 'offer') cols.offer.push(a);
+      else if (a.status === 'rejected') cols.rejected.push(a);
+    }
+    return cols;
+  }, [overview]);
+
+  const interviews = useMemo(() => {
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    return (overview?.applications ?? [])
+      .filter((a) => a.interviewAt && new Date(a.interviewAt) >= start)
+      .sort((a, b) => new Date(a.interviewAt!).getTime() - new Date(b.interviewAt!).getTime());
+  }, [overview]);
+
   return (
     <div className="flex items-start gap-6">
       <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -154,6 +202,90 @@ export default function DashboardPage() {
             </span>
           </div>
         </section>
+
+        {/* Gamification */}
+        <div className="grid grid-cols-2 gap-3.5">
+          <section className="card p-4">
+            <div className="kicker">Série d’activité</div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-3xl font-medium text-brand">{streak}</span>
+              <span className="text-sm text-muted">jour{streak > 1 ? 's' : ''} d’affilée</span>
+            </div>
+            <div className="mt-1 text-xs text-muted">Note un fait au Journal ou avance une candidature chaque jour pour garder la série.</div>
+          </section>
+          <section className="card p-4">
+            <div className="kicker">Objectif de la semaine</div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-3xl font-medium">{weeklyDone}</span>
+              <span className="text-sm text-muted">/ {WEEK_GOAL} candidatures envoyées</span>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full" style={{ background: 'rgb(var(--border))' }}>
+              <div
+                className="h-1.5 rounded-full"
+                style={{ width: `${Math.min((weeklyDone / WEEK_GOAL) * 100, 100)}%`, background: weeklyDone >= WEEK_GOAL ? 'rgb(var(--ok))' : 'rgb(var(--brand))' }}
+              />
+            </div>
+          </section>
+        </div>
+
+        {/* Kanban candidatures */}
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="kicker">Suivi des candidatures</div>
+            <Link href="/applications" className="btn-ghost text-xs">Tout voir</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {([
+              { key: 'save', label: 'À valider', items: kanban.save },
+              { key: 'applied', label: 'Postulées', items: kanban.applied },
+              { key: 'interview', label: 'Entretien', items: kanban.interview },
+              { key: 'offer', label: 'Proposition', items: kanban.offer },
+              { key: 'rejected', label: 'Refusées', items: kanban.rejected },
+            ] as const).map((col) => (
+              <div key={col.key} className="card p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-medium">{col.label}</span>
+                  <span className="tag-neutral">{col.items.length}</span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {col.items.length === 0 && <div className="py-2 text-xs text-muted">—</div>}
+                  {col.items.map((a) => (
+                    <Link key={a.id} href="/applications" className="rounded-lg p-2.5" style={{ background: 'rgb(var(--bg))', boxShadow: 'var(--shadow-card)' }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-[13px] font-medium">{a.title}</span>
+                        {a.matchScore != null && <span className={`${scoreBand(a.matchScore).tag} text-[10px]`}>{a.matchScore}%</span>}
+                      </div>
+                      <div className="truncate text-[11px] text-muted">
+                        {a.company ?? '—'}{a.needsFollowUp ? ' · à relancer' : ''}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {interviews.length > 0 && (
+          <section className="card p-4">
+            <div className="kicker">Prochains entretiens</div>
+            <div className="mt-1 flex flex-col">
+              {interviews.map((a) => (
+                <Link key={a.id} href="/applications" className="flex items-center justify-between gap-3 border-b border-border/50 py-2 last:border-0">
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-medium">{a.title}</span>
+                    <span className="block text-[11px] text-muted">{a.company}</span>
+                  </span>
+                  <span className="chip whitespace-nowrap">
+                    {new Date(a.interviewAt!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    {' · '}
+                    {new Date(a.interviewAt!).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           <section className="card p-4">

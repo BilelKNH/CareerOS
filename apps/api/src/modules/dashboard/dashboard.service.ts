@@ -38,6 +38,7 @@ export class DashboardService {
         status: a.status,
         matchScore: a.matchScore,
         submittedAt: a.submittedAt,
+        interviewAt: (a as { interviewAt?: Date | null }).interviewAt ?? null,
         needsFollowUp,
       };
     });
@@ -46,6 +47,8 @@ export class DashboardService {
       interesting,
       toApply: applications.filter((a) => a.status === 'pending_review' || a.status === 'approved').length,
       applied: applications.filter((a) => a.status === 'submitted').length,
+      interview: applications.filter((a) => (a.status as string) === 'interview').length,
+      offer: applications.filter((a) => (a.status as string) === 'offer').length,
       toFollowUp: rows.filter((r) => r.needsFollowUp).length,
       rejected: applications.filter((a) => a.status === 'rejected').length,
     };

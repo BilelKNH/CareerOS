@@ -216,6 +216,15 @@
     background: rgb(var(--brand));
   }
 
+  /* Wordmark — text fades from the foreground into the blurple accent. */
+  .brand-gradient {
+    background: linear-gradient(100deg, rgb(var(--fg)), rgb(var(--brand)) 70%, #c579b0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
   /* Uppercase micro-label. */
   .kicker {
     @apply text-[10px] font-medium uppercase tracking-[0.1em];

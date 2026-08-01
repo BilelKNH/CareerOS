@@ -16,7 +16,7 @@ describe('DashboardService (application tracker)', () => {
 
     const res = await new DashboardService(prisma).getOverview('u1');
 
-    expect(res.funnel).toEqual({ interesting: 5, toApply: 1, applied: 1, toFollowUp: 1, rejected: 1 });
+    expect(res.funnel).toEqual({ interesting: 5, toApply: 1, applied: 1, interview: 0, offer: 0, toFollowUp: 1, rejected: 1 });
     expect(res.applications.find((a) => a.id === 'a1')?.needsFollowUp).toBe(true);
     expect(res.employabilityScore).toBe(72);
     expect(res.cvScore).toBe(80);

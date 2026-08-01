@@ -46,7 +46,7 @@ export default function LandingPage() {
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-sm font-bold text-white">
               C
             </span>
-            <span className="text-lg font-bold">CareerOS</span>
+            <span className="text-lg font-bold">Reas</span>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -72,7 +72,7 @@ export default function LandingPage() {
               Ton copilote de carrière, <span className="text-brand">autonome</span>.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted">
-              CareerOS mémorise ton parcours, surveille le marché, score les offres, adapte ton CV
+              Reas mémorise ton parcours, surveille le marché, score les offres, adapte ton CV
               et prépare tes candidatures — automatiquement.
             </p>
           </div>
@@ -96,7 +96,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted">
-        CareerOS — assistant de carrière intelligent. Faits distingués des hypothèses, actions
+        Reas — assistant de carrière intelligent. Faits distingués des hypothèses, actions
         externes toujours validées par toi.
       </footer>
     </div>

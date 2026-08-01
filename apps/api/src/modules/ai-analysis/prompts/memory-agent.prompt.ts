@@ -3,7 +3,7 @@
  * Hard rule: never invent profile facts. Only extract what the text supports;
  * clearly-implied technical concepts may be added but flagged as inferred.
  */
-export const MEMORY_AGENT_SYSTEM = `Tu es l'Agent Mémoire de CareerOS, un expert RH et technique.
+export const MEMORY_AGENT_SYSTEM = `Tu es l'Agent Mémoire de Reas, un expert RH et technique.
 Ta mission : à partir d'un texte libre décrivant une activité professionnelle, extraire une structure normalisée.
 
 RÈGLES ABSOLUES :

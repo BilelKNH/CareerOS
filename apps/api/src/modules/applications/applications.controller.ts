@@ -76,4 +76,20 @@ export class ApplicationsController {
   followUp(@CurrentUser('userId') userId: string, @Param('id') id: string) {
     return this.applications.markFollowedUp(userId, id);
   }
+
+  /** Move to the interview stage (optionally with a scheduled date). */
+  @Post(':id/interview')
+  interview(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+    @Body('interviewAt') interviewAt?: string,
+  ) {
+    return this.applications.setStage(userId, id, 'interview', interviewAt);
+  }
+
+  /** Move to the offer/proposition stage. */
+  @Post(':id/offer')
+  offer(@CurrentUser('userId') userId: string, @Param('id') id: string) {
+    return this.applications.setStage(userId, id, 'offer');
+  }
 }

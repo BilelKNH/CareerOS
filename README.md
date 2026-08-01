@@ -1,4 +1,4 @@
-# CareerOS
+# Reas
 
 Assistant de carrière intelligent à **mémoire persistante** : suit ton évolution pro,
 analyse le marché, récupère de vraies offres, calcule un score de matching, adapte ton CV,
@@ -113,10 +113,10 @@ docker compose up --build
 
 Prérequis : **Docker Desktop**.
 
-- Double-clique sur **`CareerOS.bat`** (racine du projet) : build + démarrage de tout le
+- Double-clique sur **`Reas.bat`** (racine du projet) : build + démarrage de tout le
   stack, init de la base, ouverture du navigateur. Arrêt : **`stop-careeros.bat`**.
-- Pour un vrai **`CareerOS.exe`** : lance `launcher/build-careeros-exe.bat` (une fois), puis
-  double-clique sur `CareerOS.exe`. Détails dans `launcher/README.md`.
+- Pour un vrai **`Reas.exe`** : lance `launcher/build-careeros-exe.bat` (une fois), puis
+  double-clique sur `Reas.exe`. Détails dans `launcher/README.md`.
 
 ## Endpoints (principaux)
 

@@ -147,4 +147,34 @@ export class CvMatchService {
       recommendation,
     };
   }
+
+  /**
+   * Fetch a job posting from its URL (server-side), strip the HTML to text,
+   * and run the same match analysis. Falls back to a clear error so the UI can
+   * ask the user to paste the text instead.
+   */
+  async matchOfferFromUrl(userId: string, url: string) {
+    if (!/^https?:\/\//i.test(url || '')) {
+      throw new BadRequestException('URL invalide — elle doit commencer par http(s)://');
+    }
+    let text = '';
+    try {
+      const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; ReasBot/1.0)' } });
+      const html = await res.text();
+      text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    } catch {
+      throw new BadRequestException('Impossible de récupérer cette URL. Colle le texte de l’offre à la place.');
+    }
+    if (text.length < 120) {
+      throw new BadRequestException('Contenu de l’offre introuvable à cette URL (page protégée ?). Colle le texte à la place.');
+    }
+    const result = await this.matchOffer(userId, { jobText: text.slice(0, 9000) });
+    return { ...result, source: 'url' as const };
+  }
 }

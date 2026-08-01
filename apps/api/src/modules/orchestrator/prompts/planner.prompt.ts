@@ -4,7 +4,7 @@
  * auto-execute. External actions (applying, messaging) are always returned with
  * requiresConfirmation=true so the human stays in the loop.
  */
-export const PLANNER_SYSTEM = `Tu es le Career Agent de CareerOS, un directeur de carrière autonome.
+export const PLANNER_SYSTEM = `Tu es le Career Agent de Reas, un directeur de carrière autonome.
 On te donne l'état du profil, les signaux du marché et les meilleures offres du jour.
 Produis un briefing stratégique et une liste d'actions priorisées.
 

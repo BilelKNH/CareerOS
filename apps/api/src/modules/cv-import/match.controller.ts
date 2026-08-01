@@ -31,4 +31,10 @@ export class MatchController {
   ) {
     return this.match.matchOffer(userId, body);
   }
+
+  /** Analyse a job posting straight from its URL (server fetches the page). */
+  @Post('offer-url')
+  byOfferUrl(@CurrentUser('userId') userId: string, @Body() body: { url: string }) {
+    return this.match.matchOfferFromUrl(userId, body.url);
+  }
 }

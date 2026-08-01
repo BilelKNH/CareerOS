@@ -38,9 +38,14 @@ export default function LoginPage() {
       <form onSubmit={onSubmit} className="card relative w-full max-w-sm space-y-4 p-8">
         <div className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand text-sm font-bold text-white">
-            C
+            R
           </span>
-          <h1 className="text-2xl font-semibold">CareerOS</h1>
+          <div>
+            <h1 className="brand-gradient text-2xl font-semibold leading-none">Reas</h1>
+            <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-brand">
+              Recherche d’Emplois Autonome Simplifiée
+            </p>
+          </div>
         </div>
         <p className="text-sm text-muted">Connecte-toi pour accéder à ton copilote de carrière.</p>
         <input

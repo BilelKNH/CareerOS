@@ -128,6 +128,20 @@ export class ApplicationsService {
     });
   }
 
+  /**
+   * Move an application to a later pipeline stage: 'interview' (optionally with
+   * a scheduled date) or 'offer' (proposition reçue).
+   * NOTE: `interview`/`offer` are new ApplicationStatus values and `interviewAt`
+   * a new column — both land after `prisma db push`. Cast to `never` so this
+   * compiles against the current generated client until it is regenerated.
+   */
+  async setStage(userId: string, id: string, stage: 'interview' | 'offer', interviewAt?: string) {
+    assertOwnership(await this.prisma.application.findUnique({ where: { id } }), userId, 'Application');
+    const data: Record<string, unknown> = { status: stage };
+    if (stage === 'interview') data.interviewAt = interviewAt ? new Date(interviewAt) : new Date();
+    return this.prisma.application.update({ where: { id }, data: data as never });
+  }
+
   /** Record that the user followed up (relance) — resets the follow-up timer. */
   async markFollowedUp(userId: string, id: string) {
     assertOwnership(await this.prisma.application.findUnique({ where: { id } }), userId, 'Application');

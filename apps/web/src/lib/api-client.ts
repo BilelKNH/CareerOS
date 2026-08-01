@@ -153,6 +153,8 @@ export const endpoints = {
     api<RoleScore>('/match/role', { method: 'POST', body: JSON.stringify({ role, cvText }) }),
   matchOffer: (params: { offerId?: string; jobText?: string; cvText?: string }) =>
     api<OfferMatch>('/match/offer', { method: 'POST', body: JSON.stringify(params) }),
+  matchOfferUrl: (url: string) =>
+    api<OfferMatch>('/match/offer-url', { method: 'POST', body: JSON.stringify({ url }) }),
 
   agentRun: () => api<AgentRunRecord>('/agent/run', { method: 'POST' }),
   agentDigest: () => api<AgentRunRecord | null>('/agent/digest'),
@@ -173,6 +175,9 @@ export const endpoints = {
   skipApplication: (id: string) => api<Application>(`/applications/${id}/skip`, { method: 'POST' }),
   rejectApplication: (id: string) => api<Application>(`/applications/${id}/reject`, { method: 'POST' }),
   followUpApplication: (id: string) => api<Application>(`/applications/${id}/followup`, { method: 'POST' }),
+  interviewApplication: (id: string, interviewAt?: string) =>
+    api<Application>(`/applications/${id}/interview`, { method: 'POST', body: JSON.stringify({ interviewAt }) }),
+  offerApplication: (id: string) => api<Application>(`/applications/${id}/offer`, { method: 'POST' }),
   autoApplySettings: () => api<AutoApplySettings>('/applications/settings'),
   updateAutoApplySettings: (s: Partial<AutoApplySettings>) =>
     api<AutoApplySettings>('/applications/settings', { method: 'POST', body: JSON.stringify(s) }),
@@ -240,6 +245,7 @@ export interface JobOffer {
   contractType: string | null;
   source: string;
   url: string;
+  description?: string | null;
   technologies: string[];
   scrapedAt: string;
   matches: { globalScore: number; interviewProbability: string }[];
@@ -316,7 +322,7 @@ export interface Profile {
 }
 export interface Application {
   id: string;
-  status: 'draft' | 'pending_review' | 'approved' | 'submitted' | 'rejected' | 'skipped' | 'failed';
+  status: 'draft' | 'pending_review' | 'approved' | 'submitted' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';
   channel: 'manual' | 'email' | 'external_url';
   matchScore: number | null;
   cvSummary: string | null;
@@ -324,6 +330,7 @@ export interface Application {
   atsKeywords: string[];
   autoSubmitted: boolean;
   submittedAt: string | null;
+  interviewAt?: string | null;
   notes: string | null;
   createdAt: string;
   jobOffer?: { title: string; company: string | null; url: string };
@@ -434,9 +441,10 @@ export interface TrackedApplication {
   title: string;
   company: string | null;
   url: string;
-  status: 'draft' | 'pending_review' | 'approved' | 'submitted' | 'rejected' | 'skipped' | 'failed';
+  status: 'draft' | 'pending_review' | 'approved' | 'submitted' | 'interview' | 'offer' | 'rejected' | 'skipped' | 'failed';
   matchScore: number | null;
   submittedAt: string | null;
+  interviewAt: string | null;
   needsFollowUp: boolean;
 }
 export interface DashboardOverview {
@@ -446,6 +454,8 @@ export interface DashboardOverview {
     interesting: number;
     toApply: number;
     applied: number;
+    interview: number;
+    offer: number;
     toFollowUp: number;
     rejected: number;
   };

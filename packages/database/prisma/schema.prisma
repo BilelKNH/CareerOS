@@ -1,4 +1,4 @@
-// CareerOS — Prisma schema
+// Reas — Prisma schema
 // pgvector enabled via the `vector` extension (see migrations + init.sql).
 
 generator client {
@@ -96,6 +96,8 @@ enum ApplicationStatus {
   pending_review
   approved
   submitted
+  interview
+  offer
   rejected
   skipped
   failed
@@ -415,6 +417,7 @@ model Application {
   submittedAt  DateTime?
   reviewedAt   DateTime?
   followedUpAt DateTime?
+  interviewAt  DateTime?
   notes        String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt

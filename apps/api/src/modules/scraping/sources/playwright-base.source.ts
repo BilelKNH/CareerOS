@@ -32,7 +32,7 @@ export abstract class PlaywrightJobSource implements JobSource {
       const { chromium } = (await import('playwright')) as typeof import('playwright');
       browser = await chromium.launch({ headless: true });
       const b = browser as import('playwright').Browser;
-      const page = await b.newPage({ userAgent: 'CareerOSBot/0.1 (+contact)' });
+      const page = await b.newPage({ userAgent: 'ReasBot/0.1 (+contact)' });
       await page.goto(this.buildUrl(query), { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForTimeout(this.throttleMs);
       const text = await page.content();

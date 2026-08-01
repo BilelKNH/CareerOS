@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { endpoints, Experience, Skill, Preferences } from '@/lib/api-client';
 import { categoryColor } from '@/lib/colors';
@@ -52,6 +52,8 @@ export default function ParcoursPage() {
   const [skillName, setSkillName] = useState('');
   const [skillCat, setSkillCat] = useState('methodology');
   const [error, setError] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: endpoints.profile });
   const { data: preferences } = useQuery({ queryKey: ['preferences'], queryFn: endpoints.preferences });
@@ -70,6 +72,31 @@ export default function ParcoursPage() {
   const addSkill = useMutation({ mutationFn: () => endpoints.addSkill(skillName, skillCat), onSuccess: () => { setSkillName(''); invalidateSkills(); } });
   const delSkill = useMutation({ mutationFn: (id: string) => endpoints.deleteSkill(id), onSuccess: invalidateSkills });
   const clearSkills = useMutation({ mutationFn: () => endpoints.clearSkills(), onSuccess: () => { setConfirmClear(false); invalidateSkills(); } });
+
+  const importCv = useMutation({
+    mutationFn: (f: File) => endpoints.importCv(f),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ['experiences'] });
+      qc.invalidateQueries({ queryKey: ['skills'] });
+      qc.invalidateQueries({ queryKey: ['careers'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      const exp =
+        r.experiencesAdded > 0
+          ? `${r.experiencesAdded} expérience(s)`
+          : r.experiencesFound > 0
+            ? 'expériences déjà présentes'
+            : 'aucune expérience détectée';
+      setImportMsg(`CV analysé : ${r.addedSkills.length} compétence(s) ajoutée(s), ${exp}.`);
+    },
+    onError: (e) => setImportMsg(e instanceof Error ? `Import échoué : ${e.message}` : 'Import échoué'),
+  });
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (f) { setImportMsg(null); importCv.mutate(f); }
+  };
 
   const grouped = useMemo(() => {
     return GROUPS.map((g) => ({
@@ -103,12 +130,44 @@ export default function ParcoursPage() {
               </button>
             ))}
           </div>
-          <Link href="/cv" className="btn-secondary">Importer un CV</Link>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf,.docx,.txt"
+            className="hidden"
+            onChange={onPickFile}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={importCv.isPending}
+            className="btn-secondary disabled:opacity-60"
+          >
+            {importCv.isPending ? 'Analyse en cours…' : 'Importer un CV'}
+          </button>
           <button onClick={openAdd} className="btn-primary">+ Expérience</button>
         </div>
       </header>
 
       {error && <div className="rounded-lg bg-rose-500/10 p-3 text-sm text-rose-400">{error}</div>}
+
+      {(importCv.isPending || importMsg) && (
+        <div
+          className="flex items-center gap-2.5 rounded-lg p-3 text-sm"
+          style={{ background: 'color-mix(in srgb, rgb(var(--brand)) 8%, transparent)' }}
+        >
+          {importCv.isPending && (
+            <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
+          )}
+          <span className={importCv.isPending ? 'text-foreground/80' : 'text-foreground/80'}>
+            {importCv.isPending
+              ? 'Analyse du CV en arrière-plan — tu peux continuer à travailler, la page se met à jour toute seule.'
+              : importMsg}
+          </span>
+          {!importCv.isPending && importMsg && (
+            <button onClick={() => setImportMsg(null)} className="ml-auto text-muted hover:text-foreground" aria-label="Fermer">×</button>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start gap-6">
         {/* Colonne gauche : profil + expériences */}
@@ -140,7 +199,7 @@ export default function ParcoursPage() {
               <p className="text-sm text-muted">Aucune expérience.</p>
               <div className="mt-4 flex justify-center gap-2">
                 <button onClick={openAdd} className="btn-primary">Ajouter</button>
-                <Link href="/cv" className="btn-secondary">Importer mon CV</Link>
+                <button onClick={() => fileRef.current?.click()} className="btn-secondary">Importer mon CV</button>
               </div>
             </div>
           ) : (
